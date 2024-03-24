@@ -12,17 +12,51 @@ jobs:
     runs-on: ${{ matrix.os[0] }}
     strategy:
       matrix:
-        os: [[macos-latest, bash], [ubuntu-latest, bash], [windows-latest, msys2]]
+        os: [[macos-latest, bash], [ubuntu-latest, bash], [windows-latest, msys2], [windows-2019, cygwin]]
       fail-fast: false
     defaults:
      run:
       shell: ${{ matrix.os[1] }} {0}
 
     steps:
+    # checkout action uses the native git (we can avoid this messing up line
+    # endings, but this could still be dangerous e.g if we need symlinks in the
+    # repo)
+    - name: avoid messing up line endings
+      if: matrix.os[0] == 'windows-2019'
+      run: git config --global core.autocrlf input
+    
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
+    # install cygwin and build tools
+    - name: Install Cygwin
+      if: matrix.os[0] == 'windows-2019'
+      uses: cygwin/cygwin-install-action@master
+      with:
+        platform: x86_64
+        packages: >-
+          autoconf,
+          automake,
+          bison,
+          busybox,
+          cmake,
+          flex,
+          gcc-g++,
+          git,
+          gettext-devel,
+          libgmp-devel,
+          libmpc-devel,
+          libmpfr-devel,
+          make,
+          patch,
+          perl,
+          texinfo,
+          wget,
+          zlib-devel
+          echo "MSYSTEM=x64" >> $GITHUB_ENV
+          
     - name: Install Ubuntu packages
       if: matrix.os[0] == 'ubuntu-latest'
       run: |
@@ -48,7 +82,7 @@ jobs:
         update: true
         shell: msys2 {0}
 
-    - name: Runs all the stages in the shell
+    - name: Runs all the stages in the shell (Ubuntu, Macos and Windows latest)
       continue-on-error: true
       run: |
         export PS2DEV=$PWD/ps2dev
@@ -59,6 +93,18 @@ jobs:
         export PATH=$PATH:$PS2DEV/bin:$PS2DEV/ee/bin:$PS2DEV/iop/bin:$PS2DEV/dvp/bin:$PS2SDK/bin
         ./build-all.sh
 
+    - name: Runs all the stages in the shell (Windows 2019 Cygwin)
+      if: matrix.os[0] == 'windows-2019'
+      continue-on-error: true
+      run: >-
+        export PATH=/usr/bin:$(cygpath ${SYSTEMROOT})/system32 &&
+        export PS2DEV=$PWD/ps2dev &&
+        export PS2SDK=$PS2DEV/ps2sdk &&
+        export GSKIT=$PS2DEV/gsKit &&
+        export PATH=$PATH:$PS2DEV/bin:$PS2DEV/ee/bin:$PS2DEV/iop/bin:$PS2DEV/dvp/bin:$PS2SDK/bin &&
+        (./build-all.sh)
+      shell: C:\cygwin\bin\bash.exe --noprofile --norc -eo pipefail '{0}'
+      
     - name: Get short SHA
       id: slug
       run: echo "sha8=${MSYSTEM}-sha[$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT

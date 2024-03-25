@@ -83,6 +83,7 @@ jobs:
         shell: msys2 {0}
 
     - name: Runs all the stages in the shell (Ubuntu, Macos and Windows latest)
+      if: matrix.os[0] == 'ubuntu-latest' || matrix.os[0] == 'macos-latest' || matrix.os[0] == 'windows-latest'
       continue-on-error: true
       run: |
         export PS2DEV=$PWD/ps2dev

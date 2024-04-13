@@ -151,8 +151,7 @@ jobs:
         tag_name: ${{ steps.tag.outputs.VERSION }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    # workarouund problems with action/checkout post-run step using cygwin git
+        
     - name: Avoid action/checkout post-run steps using Cygwin git
       if: matrix.os[0] == 'windows-2019'
       run: bash -c 'rm /usr/bin/git.exe'

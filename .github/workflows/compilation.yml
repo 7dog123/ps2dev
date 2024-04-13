@@ -117,7 +117,7 @@ jobs:
 
     - name: Prepare ps2dev folder (Windows 2019 cygwin)
       if: matrix.os[0] == 'windows-2019'
-      run: > -
+      run: >-
         export PATH=/usr/bin:$(cygpath ${SYSTEMROOT})/system32 &&
         (tar -zcvf ps2dev-${{matrix.os[0]}}.tar.gz ps2dev)
       shell: C:\cygwin\bin\bash.exe --noprofile --norc -eo pipefail '{0}'

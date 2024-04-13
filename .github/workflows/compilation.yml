@@ -110,10 +110,18 @@ jobs:
       id: slug
       run: echo "sha8=${MSYSTEM}-sha[$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
 
-    - name: Prepare ps2dev folder
+    - name: Prepare ps2dev folder  (Ubuntu, Macos and Windows latest)
+      if: matrix.os[0] == 'ubuntu-latest' || matrix.os[0] == 'macos-latest' || matrix.os[0] == 'windows-latest'
       run: |
         tar -zcvf ps2dev-${{matrix.os[0]}}.tar.gz ps2dev
 
+    - name: Prepare ps2dev folder (Windows 2019 cygwin)
+      if: matrix.os[0] == 'windows-2019'
+      run: > -
+        export PATH=/usr/bin:$(cygpath ${SYSTEMROOT})/system32 &&
+        (tar -zcvf ps2dev-${{matrix.os[0]}}.tar.gz ps2dev)
+      shell: C:\cygwin\bin\bash.exe --noprofile --norc -eo pipefail '{0}'
+      
     - uses: actions/upload-artifact@v3
       with:
         name: ps2dev-${{matrix.os[0]}}-${{ steps.slug.outputs.sha8 }}
@@ -143,3 +151,8 @@ jobs:
         tag_name: ${{ steps.tag.outputs.VERSION }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # workarouund problems with action/checkout post-run step using cygwin git
+    - name: Avoid action/checkout post-run steps using Cygwin git
+      if: matrix.os[0] == 'windows-2019'
+      bash -c 'rm /usr/bin/git.exe'

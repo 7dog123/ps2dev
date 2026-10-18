@@ -108,7 +108,7 @@ jobs:
         install: |
           base-devel git make texinfo flex bison patch binutils mpc-devel tar wget curl
           autotools gettext gettext-devel
-          mingw-w64-ucrt-x86_64-readline mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake 
+          mingw-w64-ucrt-x86_64-readline mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake
           mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-libogg mingw-w64-ucrt-x86_64-libsystre
         update: true
 
@@ -116,6 +116,10 @@ jobs:
       run: |
         set -e
         . ./config/ci-env.sh
+        # Workaround for ./build-cmakelibs.sh: line 33: MINGW64-make: command not found
+         if [[ "$MSYSTEM" == "UCRT64" ]]; then
+          ln -sf /ucrt64/bin/mingw32-make.exe /ucrt64/bin/MINGW64-make.exe
+        fi
         if test -f ./build-all.sh; then ./build-all.sh; fi
         if test -f ./toolchain.sh; then ./toolchain.sh; fi
 
